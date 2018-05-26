@@ -84,7 +84,7 @@ def resemul(x, block_type='se', multi=True, init_features=128, amplifying_ratio=
   else:
     raise Exception('Unknown block type: ' + block_type)
 
-  x = Input(tensor=x)
+  # x = Input(input_shape)
   x = Reshape([-1, 1])(x)
 
   x = Conv1D(init_features, kernel_size=3, strides=3, padding='valid', use_bias=True,
