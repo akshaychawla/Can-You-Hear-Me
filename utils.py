@@ -7,7 +7,10 @@ import librosa
 import h5py
 import numpy as np
 import multiprocessing as mp
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle 
 from keras.utils import to_categorical
 from joblib import Parallel, delayed
 from functools import partial
@@ -76,7 +79,7 @@ def make_training_rest_list(data_root, exclude_dirs = ["_background_noise_"]):
     class_ix = {c:ix for ix,c in enumerate(sorted(classes))}
     class_path = os.path.join(data_root, "DICT_ix_class.cpkl")
     print("\nWriting %s ..."%class_path)
-    with open(class_path, 'w') as fp:
+    with open(class_path, 'wb') as fp:
         pickle.dump(class_ix, fp)
 
     print("\nDone.")
@@ -101,7 +104,7 @@ def create_data_hdf5(root):
     assert not os.path.isfile(train_write_path), "training.h5py already exists in %s"%root
     assert not os.path.isfile(rest_write_path), "rest.h5py already exists in %s"%root
 
-    with open(class_path) as fp:
+    with open(class_path, "rb") as fp:
         ix_class = pickle.load(fp)
 
     def stupid(fname):
