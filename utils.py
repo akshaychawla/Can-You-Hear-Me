@@ -21,6 +21,13 @@ def librosa_load(path, srate):
         return audio[:srate]
 load_audio_16k = partial(librosa_load, srate=SRATE)
 
+
+def data_generator(h5path):
+    assert not os.path.isfile(h5path), "%s does not exist"
+    with h5py.File(h5path, 'r') as f:
+        data = f["subgroup"].get("data")
+
+
 def make_training_rest_list(data_root, exclude_dirs = ["_background_noise_"]):
     """
     Download v0.01 from http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz
@@ -124,6 +131,7 @@ def create_data_hdf5(root):
     write_h5py(rest_write_path, rest_wavs, rest_targets)
 
     print("\nDone.")
+
 
 if __name__ == '__main__':
     data_root = sys.argv[1]
