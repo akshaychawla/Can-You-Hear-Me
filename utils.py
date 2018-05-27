@@ -25,10 +25,20 @@ def librosa_load(path, srate):
 load_audio_16k = partial(librosa_load, srate=SRATE)
 
 
-def data_generator(h5path):
-    assert not os.path.isfile(h5path), "%s does not exist"
+def data_generator(h5path, batch_size=32):
+    assert os.path.isfile(h5path), "%s does not exist"
     with h5py.File(h5path, 'r') as f:
-        data = f["subgroup"].get("data")
+        data = f["subgroup"]["data"]
+        targets = f["subgroup"]["targets"] 
+        assert len(data) == len(targets), "Data and target do not have the same number of items"
+        while True: 
+            data_indices = np.arange(len(data)).astype(np.int32) 
+            np.random.shuffle(data_indices) 
+            for _index in range(0, len(data_indices), batch_size): 
+                indices_for_h5 = data_indices[ _index: min(len(data),_index+batch_size) ] 
+                indices_for_h5 = np.sort(indices_for_h5).tolist() 
+                x_batch, y_batch = data[indices_for_h5], targets[indices_for_h5] 
+                yield x_batch, y_batch
 
 
 def make_training_rest_list(data_root, exclude_dirs = ["_background_noise_"]):
