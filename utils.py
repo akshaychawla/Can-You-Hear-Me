@@ -1,4 +1,6 @@
-## Utility codes for data, eval, plotting, etc.
+"""
+Utility codes for data, eval, plotting, etc.
+"""
 
 from __future__ import print_function
 import os
@@ -10,7 +12,7 @@ import multiprocessing as mp
 try:
     import cPickle as pickle
 except:
-    import pickle 
+    import pickle
 from keras.utils import to_categorical
 from joblib import Parallel, delayed
 from functools import partial
@@ -26,18 +28,21 @@ load_audio_16k = partial(librosa_load, srate=SRATE)
 
 
 def data_generator(h5path, batch_size=32):
+    """
+    Custom generator for loading from h5 files.
+    """
     assert os.path.isfile(h5path), "%s does not exist"
     with h5py.File(h5path, 'r') as f:
         data = f["subgroup"]["data"]
-        targets = f["subgroup"]["targets"] 
-        assert len(data) == len(targets), "Data and target do not have the same number of items"
-        while True: 
-            data_indices = np.arange(len(data)).astype(np.int32) 
-            np.random.shuffle(data_indices) 
-            for _index in range(0, len(data_indices), batch_size): 
-                indices_for_h5 = data_indices[ _index: min(len(data),_index+batch_size) ] 
-                indices_for_h5 = np.sort(indices_for_h5).tolist() 
-                x_batch, y_batch = data[indices_for_h5], targets[indices_for_h5] 
+        targets = f["subgroup"]["targets"]
+        assert len(data) == len(targets), "data, target lengths mismatch"
+        while True:
+            data_indices = np.arange(len(data)).astype(np.int32)
+            np.random.shuffle(data_indices)
+            for _index in range(0, len(data_indices), batch_size):
+                indices_for_h5 = data_indices[ _index: min(len(data),_index+batch_size) ]
+                indices_for_h5 = np.sort(indices_for_h5).tolist()
+                x_batch, y_batch = data[indices_for_h5], targets[indices_for_h5]
                 yield x_batch, y_batch
 
 
