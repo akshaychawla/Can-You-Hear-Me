@@ -1,3 +1,4 @@
+from __future__ import print_function
 from keras.layers import (Conv1D, MaxPool1D, BatchNormalization, GlobalAvgPool1D, Multiply, GlobalMaxPool1D,
                           Dense, Dropout, Activation, Reshape, Input, Concatenate, Add)
 from keras.regularizers import l2
@@ -97,7 +98,7 @@ def resemul(x, block_type='se', multi=True, init_features=128, amplifying_ratio=
   num_blocks = 8
   for i in range(num_blocks):
     num_features *= 2 if (i == 2 or i == num_blocks-1) else 1
-    no_pool = False 
+    no_pool = False
     if i==num_blocks-1:
         no_pool = True
     x = block(x, num_features, weight_decay, amplifying_ratio, no_pool)
