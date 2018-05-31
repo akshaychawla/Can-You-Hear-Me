@@ -10,6 +10,7 @@ from keras.layers import Input
 from keras import optimizers, callbacks
 from keras import utils
 from utils import data_generator
+import sys 
 
 # network arch
 input_tensor = Input(shape=(16000,))
@@ -21,7 +22,7 @@ output_tensor = resemul(
 model = Model(input_tensor, output_tensor)
 print(model.summary())
 sgd = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True)
-model.compile(sgd, "categorical_crossentropy")
+model.compile(sgd, "categorical_crossentropy", metrics=["accuracy"])
 print("..Model Compiled")
 
 # callbacks
@@ -40,13 +41,21 @@ lrschedule = callbacks.ReduceLROnPlateau(
 tboard     = callbacks.TensorBoard(log_dir="./logs/")
 
 # Train the model
-dgen = data_generator("/Users/tejaswin.p/Downloads/audio-experiments/speech_commands_v0.01/training.h5py")
+batch_size = 32
+train_dgen = data_generator(sys.argv[1], batch_size)
+valid_dgen  = data_generator(sys.argv[2], batch_size) 
+train_steps_per_epoch = 51087 // batch_size + 1
+valid_steps_per_epoch = 13633 // batch_size + 1
+print("Train steps per epoch: ", train_steps_per_epoch) 
+print("valid steps per epoch: ", valid_steps_per_epoch)
 
 history = model.fit_generator(
-                    dgen,
-                    steps_per_epoch=1597,
-                    epochs=10,
-                    callbacks=[checkpoint, tboard]
+                    train_dgen,
+                    steps_per_epoch=train_steps_per_epoch,
+                    epochs=50,
+                    validation_data=valid_dgen, 
+                    validation_steps=valid_steps_per_epoch,
+                    callbacks=[checkpoint, lrschedule, tboard]
                 )
 
 import ipdb; ipdb.set_trace()
