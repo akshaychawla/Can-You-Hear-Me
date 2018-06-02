@@ -1,2 +1,6 @@
 # python files
 *.pyc
+# logs and checkpoints
+logs/*
+checkpoints/*
+
