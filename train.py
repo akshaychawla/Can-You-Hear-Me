@@ -11,8 +11,13 @@ from keras.layers import Input
 from keras import optimizers, callbacks
 from keras import utils
 from utils import data_generator
+from kaggle_utils import score_generator
 import sys
 import os
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 # network arch
 input_tensor = Input(shape=(16000,))
@@ -25,7 +30,40 @@ model = Model(input_tensor, output_tensor)
 print(model.summary())
 sgd = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True)
 model.compile(sgd, "categorical_crossentropy", metrics=["accuracy"])
-print("..Model Compiled")
+print("Model compiled.")
+model.load_weights("/home/tejaswin.p/Can-You-Hear-Me/checkpoints/weights.16-0.23.hdf5")
+print("Weights loaded.")
+
+if sys.argv[1] == "score":
+    score_dgen = score_generator(sys.argv[2], batch_size=250)
+    with open("/home/tejaswin.p/.kaggle/competitions/tensorflow-speech-recognition-challenge/train/audio/DICT_ix_class.cpkl", "rb") as fp:
+        ix_label = {ix:label for label, ix in pickle.load(fp).items()}
+
+
+    allowed = "yes, no, up, down, left, right, on, off, stop, go".strip().split(",")
+    allowed = [token.strip() for token in allowed]
+
+    for ix,label in ix_label.items():
+        if label not in allowed:
+            ix_label[ix] = "silence"
+
+    score_csv = ["fname,label\n"]
+
+    _scount = 0
+    for _sdata, _stargets in score_dgen:
+        score_preds = np.argmax(model.predict_on_batch(_sdata), axis=1)
+        score_labels = [ix_label[v] for v in score_preds]
+
+        score_csv.extend([a+","+b+"\n" for a,b in zip(_stargets, score_labels)])
+        print("Completed", _scount+1, "batch.")
+        _scount += 1
+
+    print("\nScoring done...")
+    with open("/home/tejaswin.p/.kaggle/competitions/tensorflow-speech-recognition-challenge/submit.csv", "w") as fp:
+        fp.writelines(score_csv)
+    print("Written to file.")
+    sys.exit()
+
 
 # callbacks
 _expdt = str(datetime.now()).replace(' ', '_')
