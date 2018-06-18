@@ -36,6 +36,7 @@ def data_generator(h5path, batch_size=32):
         data = f["subgroup"]["data"]
         targets = f["subgroup"]["targets"]
         assert len(data) == len(targets), "data, target lengths mismatch"
+        print("File", h5path, len(targets))
         while True:
             data_indices = np.arange(len(data)).astype(np.int32)
             np.random.shuffle(data_indices)
