@@ -22,7 +22,7 @@ except:
 # network arch
 input_tensor = Input(shape=(16000,))
 output_tensor = resemul(
-                        input_tensor, block_type="basic", init_features=128,
+                        input_tensor, block_type="rese", init_features=128,
                         amplifying_ratio=16, drop_rate=0.5, weight_decay=0.0,
                         num_classes=30
                     )
@@ -31,8 +31,8 @@ print(model.summary())
 sgd = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True)
 model.compile(sgd, "categorical_crossentropy", metrics=["accuracy"])
 print("Model compiled.")
-model.load_weights("/home/tejaswin.p/Can-You-Hear-Me/checkpoints/weights.16-0.23.hdf5")
-print("Weights loaded.")
+# model.load_weights("/home/tejaswin.p/Can-You-Hear-Me/checkpoints/weights.16-0.23.hdf5")
+# print("Weights loaded.")
 
 if sys.argv[1] == "score":
     score_dgen = score_generator(sys.argv[2], batch_size=250)
