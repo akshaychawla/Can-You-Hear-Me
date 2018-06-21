@@ -181,9 +181,11 @@ def add_silence(data_root):
     bnoise_dir = os.path.join(data_root, "_background_noise_")
     cat_file = os.path.join(bnoise_dir, "dude_miaowing.wav")
 
-    assert not os.path.isdir(silence_dir), "ERROR. silence dir already exists."
+    assert os.path.isdir(silence_dir) is False, "ERROR. silence dir already exists."
     assert os.path.isdir(bnoise_dir), "ERROR. _background_noise_ dir does not exist."
     assert os.path.isfile(cat_file), "ERROR. dude_miaowing.wav does not exist."
+
+    os.makedirs(silence_dir)
 
     ## clean the cat file.
     fs1, y1 = scipy.io.wavfile.read(cat_file)
@@ -200,10 +202,31 @@ def add_silence(data_root):
     scipy.io.wavfile.write(cat_file, fs1, new_audio)
     print("Done.")
 
-    for fname in os.listdir(silence_dir):
+    for fname in os.listdir(bnoise_dir):
         if fname.endswith(".wav"):
+            path = os.path.join(bnoise_dir, fname)
             audio, _ = librosa.load(path, sr=SRATE)
-            print(fname, len(audio)//SRATE)
+            alen = len(audio)
+            print(fname, alen, alen//SRATE)
+
+            for count, ix in enumerate(range(0, len(audio), SRATE)):
+                up = ix + SRATE
+                if up > alen:
+                    up = alen
+
+                temp_audio = audio[ix:up]
+                temp_path = os.path.join(silence_dir, fname[:2]+"_nohash_%d.wav"%count)
+
+                if len(temp_audio) >= 10000:
+                    if len(temp_audio) < SRATE:
+                        temp_audio = np.pad(temp_audio, (SRATE - len(temp_audio), 0), mode='constant')
+                    else:
+                        temp_audio = temp_audio[:SRATE]
+
+                    librosa.output.write_wav(temp_path, temp_audio, SRATE)
+
+            assert up==alen, "YO! Your indexing limits are not matching!!!"
+
 
 
 if __name__ == '__main__':
@@ -221,5 +244,5 @@ if __name__ == '__main__':
         print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
 
     elif what == "silence":
-        add_silence(data_root=)
+        add_silence(data_root)
         print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
