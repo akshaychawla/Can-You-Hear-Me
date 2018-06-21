@@ -6,6 +6,8 @@ from __future__ import print_function
 import os
 import sys
 import librosa
+import scipy
+import shutil
 import h5py
 import numpy as np
 import multiprocessing as mp
@@ -60,7 +62,7 @@ def score_generator(test_samples_folder, batch_size=32):
     s = len(file_names)
     lowers = list(range(0, s, batch_size))
     print("Total test files found...", s)
-    
+
     for ix in lowers:
         if (ix+batch_size)>s:
             ux = s
@@ -113,10 +115,6 @@ def make_training_list(data_root, exclude_dirs = ["_background_noise_"]):
     print("\nWriting %s ..."%train_path)
     with open(train_path, 'w') as fp:
         fp.writelines("\n".join(train_files))
-
-    print("\nWriting %s : test + validation ..."%rest_path)
-    with open(rest_path, 'w') as fp:
-        fp.writelines(rest_files)
 
     class_ix = {c:ix for ix,c in enumerate(sorted(classes))}
     class_path = os.path.join(data_root, "DICT_ix_class.cpkl")
@@ -178,13 +176,50 @@ def create_data_hdf5(root):
     print("\nDone.")
 
 
+def add_silence(data_root):
+    silence_dir = os.path.join(data_root, "silence")
+    bnoise_dir = os.path.join(data_root, "_background_noise_")
+    cat_file = os.path.join(bnoise_dir, "dude_miaowing.wav")
+
+    assert not os.path.isdir(silence_dir), "ERROR. silence dir already exists."
+    assert os.path.isdir(bnoise_dir), "ERROR. _background_noise_ dir does not exist."
+    assert os.path.isfile(cat_file), "ERROR. dude_miaowing.wav does not exist."
+
+    ## clean the cat file.
+    fs1, y1 = scipy.io.wavfile.read(cat_file)
+    drop_points = [(0, 4), (20, 23), (39, 46), (50, 52)]
+    use_points = [(4, 20), (23, 39), (46, 50), (52, 62)]
+
+    new_audio = []
+    for start, stop in use_points:
+        new_audio.append(y1[start*fs1:stop*fs1])
+    new_audio = np.hstack(new_audio)
+
+    print("Saving new cat audio...")
+    shutil.move(cat_file, os.path.join(bnoise_dir, "new_dude_miaowing.wav.orig"))
+    scipy.io.wavfile.write(cat_file, fs1, new_audio)
+    print("Done.")
+
+    for fname in os.listdir(silence_dir):
+        if fname.endswith(".wav"):
+            audio, _ = librosa.load(path, sr=SRATE)
+            print(fname, len(audio)//SRATE)
+
+
 if __name__ == '__main__':
     data_root = sys.argv[1]
+    what = sys.argv[2]
     print("\nRoot provided:", data_root)
+    print("Mode:", what)
+
     import time
     _st = time.time()
 
-    make_training_list(data_root)
-    create_data_hdf5(data_root)
+    if what == "data":
+        make_training_list(data_root)
+        create_data_hdf5(data_root)
+        print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
 
-    print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
+    elif what == "silence":
+        add_silence(data_root=)
+        print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
