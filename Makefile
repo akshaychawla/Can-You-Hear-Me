@@ -28,4 +28,4 @@ vanilla:
 	python utils.py $(DATA_PATH)
 
 kaggle:
-	python kaggle_utils.py 
+	python kaggle_utils.py $(DATA_PATH) silence
