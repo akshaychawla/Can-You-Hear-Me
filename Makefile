@@ -23,4 +23,9 @@ download:
 setup:
 	mkdir logs
 	mkdir checkpoints
+
+vanilla:
 	python utils.py $(DATA_PATH)
+
+kaggle:
+	python kaggle_utils.py 
