@@ -1,4 +1,4 @@
-DATA_PATH=/home/sviper/audio-data
+DATA_PATH=/Users/tejaswin.p/Downloads/sample
 
 .DEFAULT_GOAL := help
 help:
@@ -14,18 +14,23 @@ help:
 clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
+	@echo ""
 
 download:
 	mkdir $(DATA_PATH)
 	wget -P $(DATA_PATH) http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz
 	tar -xvzf $(DATA_PATH)/speech_commands_v0.01.tar.gz --directory $(DATA_PATH)
+	@echo ""
 
 setup:
 	mkdir logs
 	mkdir checkpoints
+	@echo ""
 
 vanilla:
 	python utils.py $(DATA_PATH)
+	@echo ""
 
 kaggle:
 	python kaggle_utils.py $(DATA_PATH) silence
+	@echo ""
