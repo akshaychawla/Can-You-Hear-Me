@@ -1,4 +1,4 @@
-DATA_PATH=/home/tejaswin.p/.kaggle/competitions/tensorflow-speech-recognition-challenge/train/audio
+DATA_PATH=$(HOME)/.kaggle/competitions/tensorflow-speech-recognition-challenge/train/audio
 
 .DEFAULT_GOAL := help
 help:
@@ -6,7 +6,7 @@ help:
 	@echo "COMMANDS:"
 	@echo "  clean          Remove all generated files."
 	@echo "  download       Create data dir, download and extract the training data."
-	@echo "  setup          Create log directories and prepare data."
+	@echo "  setup          Create checkpoint, log directories."
 	@echo "  vanilla        Assume that data in DATA_PATH is ready for splitting and h5."
 	@echo "  kaggle         Add silence clips. Then split and dump to h5."
 	@echo ""
