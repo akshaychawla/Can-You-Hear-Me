@@ -24,7 +24,7 @@ input_tensor = Input(shape=(16000,))
 output_tensor = resemul(
                         input_tensor, block_type="rese", init_features=128,
                         amplifying_ratio=16, drop_rate=0.5, weight_decay=0.0,
-                        num_classes=30
+                        num_classes=31
                     )
 model = Model(input_tensor, output_tensor)
 print(model.summary())
