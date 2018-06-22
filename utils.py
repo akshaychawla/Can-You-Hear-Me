@@ -95,7 +95,7 @@ def make_training_rest_list(data_root, exclude_dirs = ["_background_noise_"]):
 
     print("\nWriting rest %s ..."%rest_path)
     with open(rest_path, 'w') as fp:
-        fp.writelines(rest_files)
+        fp.writelines("\n".join(rest_files))
 
     class_ix = {c:ix for ix,c in enumerate(sorted(classes))}
     class_path = os.path.join(data_root, "DICT_ix_class.cpkl")
