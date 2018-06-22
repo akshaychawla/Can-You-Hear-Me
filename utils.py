@@ -103,7 +103,6 @@ def make_training_rest_list(data_root, exclude_dirs = ["_background_noise_"]):
     with open(class_path, 'wb') as fp:
         pickle.dump(class_ix, fp)
 
-    import ipdb; ipdb.set_trace()
     print("\nDone.")
 
 
@@ -199,7 +198,6 @@ def create_data_hdf5(root):
         print("Created", path)
 
     train_wavs, train_targets = stupid(train_read_path)
-    import ipdb; ipdb.set_trace()
     write_h5py(train_write_path, train_wavs, train_targets)
 
     rest_wavs, rest_targets = stupid(rest_read_path)
