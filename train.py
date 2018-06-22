@@ -43,7 +43,7 @@ if sys.argv[1] == "score":
         ix_label = {ix:label for label, ix in pickle.load(fp).items()}
 
 
-    allowed = "yes, no, up, down, left, right, on, off, stop, go".strip().split(",")
+    allowed = "yes, no, up, down, left, right, on, off, stop, go, silence".strip().split(",")
     allowed = [token.strip() for token in allowed]
 
     for ix,label in ix_label.items():
