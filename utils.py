@@ -199,6 +199,7 @@ def create_data_hdf5(root):
         print("Created", path)
 
     train_wavs, train_targets = stupid(train_read_path)
+    import ipdb; ipdb.set_trace()
     write_h5py(train_write_path, train_wavs, train_targets)
 
     rest_wavs, rest_targets = stupid(rest_read_path)
