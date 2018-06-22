@@ -296,3 +296,6 @@ if __name__ == '__main__':
     elif what == "silence":
         add_silence(data_root)
         print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
+
+    else:
+        print("Valid options are 'data' or 'silence'")
