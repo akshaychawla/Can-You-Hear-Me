@@ -77,7 +77,7 @@ checkpoint = callbacks.ModelCheckpoint(
                 )
 lrschedule = callbacks.ReduceLROnPlateau(
                     monitor="val_loss",
-                    factor=0.2,
+                    factor=0.5,
                     patience=3,
                     verbose=1,
                     min_lr=1e-07
@@ -88,8 +88,8 @@ tboard     = callbacks.TensorBoard(log_dir="./logs/%s"%_expdt)
 batch_size = 32
 train_dgen = data_generator(sys.argv[1], batch_size)
 valid_dgen  = data_generator(sys.argv[2], batch_size)
-train_steps_per_epoch = 51087 // batch_size + 1
-valid_steps_per_epoch = 13633 // batch_size + 1
+train_steps_per_epoch = 51384 // batch_size + 1
+valid_steps_per_epoch = 13718 // batch_size + 1
 print("Train steps per epoch: ", train_steps_per_epoch)
 print("valid steps per epoch: ", valid_steps_per_epoch)
 
