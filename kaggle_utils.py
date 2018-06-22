@@ -295,8 +295,4 @@ if __name__ == '__main__':
 
     elif what == "silence":
         add_silence(data_root)
-        print("--data splitting--")
-        for fname in os.listdir(os.path.join(data_root, "silence")):
-            print(which_set(fname, 10, 10))
-
         print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
