@@ -214,7 +214,7 @@ def which_set(filename, validation_percentage, testing_percentage):
     # To do that, we need a stable way of deciding based on just the file name
     # itself, so we do a hash of that and then use that to generate a
     # probability value that we use to assign it.
-    hash_name_hashed = hashlib.sha1(hash_name).hexdigest()
+    hash_name_hashed = hashlib.sha1(hash_name.encode('utf-8')).hexdigest()
     percentage_hash = ((int(hash_name_hashed, 16) %
                         (MAX_NUM_WAVS_PER_CLASS + 1)) *
                        (100.0 / MAX_NUM_WAVS_PER_CLASS))
