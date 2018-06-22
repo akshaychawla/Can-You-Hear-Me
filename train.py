@@ -31,10 +31,13 @@ print(model.summary())
 sgd = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True)
 model.compile(sgd, "categorical_crossentropy", metrics=["accuracy"])
 print("Model compiled.")
-# model.load_weights("/home/tejaswin.p/Can-You-Hear-Me/checkpoints/weights.16-0.23.hdf5")
-# print("Weights loaded.")
 
+
+# scoring
 if sys.argv[1] == "score":
+    model.load_weights("/home/tejaswin.p/Can-You-Hear-Me/checkpoints/2018-06-22_08:40:45.299850/weights.04-0.25.hdf5")
+    print("Weights loaded.")
+
     score_dgen = score_generator(sys.argv[2], batch_size=250)
     with open("/home/tejaswin.p/.kaggle/competitions/tensorflow-speech-recognition-challenge/train/audio/DICT_ix_class.cpkl", "rb") as fp:
         ix_label = {ix:label for label, ix in pickle.load(fp).items()}
@@ -45,7 +48,7 @@ if sys.argv[1] == "score":
 
     for ix,label in ix_label.items():
         if label not in allowed:
-            ix_label[ix] = "silence"
+            ix_label[ix] = "unknown"
 
     score_csv = ["fname,label\n"]
 
