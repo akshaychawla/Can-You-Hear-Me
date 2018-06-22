@@ -1,4 +1,4 @@
-DATA_PATH=/Users/tejaswin.p/Downloads/sample
+DATA_PATH=/home/tejaswin.p/.kaggle/competitions/tensorflow-speech-recognition-challenge/train/audio
 
 .DEFAULT_GOAL := help
 help:
@@ -33,4 +33,5 @@ vanilla:
 
 kaggle:
 	python kaggle_utils.py $(DATA_PATH) silence
+	python utils.py $(DATA_PATH)
 	@echo ""
