@@ -5,7 +5,6 @@ This will attack the model after each epoch
 import numpy as np
 import matplotlib.pyplot as plt
 import os, sys, time, pickle
-import wide_residual_network as wrn
 from keras.callbacks import Callback, ModelCheckpoint, LearningRateScheduler, TensorBoard
 from keras.utils import to_categorical
 from keras.preprocessing.image import ImageDataGenerator
@@ -33,13 +32,12 @@ class fgsm_callback(Callback):
     def __init__(self, test_h5, eta=0.05):
         super(fgsm_callback, self).__init__() 
         self.eta = eta
-        self.train_h5 = train_h5 
         self.test_h5 = test_h5
 
         # generators
         batch_size = 32
         test_dgen = data_generator(self.test_h5, batch_size)
-        test_steps_per_epoch = 13633 // batch_size + 1
+        test_steps_per_epoch = 13718 // batch_size + 1
         print("test steps per epoch: ", test_steps_per_epoch)
 
         # normalize test set
@@ -52,7 +50,7 @@ class fgsm_callback(Callback):
             self.testY.append(y_batch)
         testX_normed = np.concatenate(testX_normed, axis=0)
         self.testY = np.concatenate(self.testY, axis=0)
-        del temp_testdgen, x_batch, y_batch
+        del x_batch, y_batch
         self.testX_normed = testX_normed
         print("[FGSM] Done")
         print("[FGSM] shapes {} {}".format(self.testX_normed.shape, self.testY.shape))
@@ -68,7 +66,6 @@ class fgsm_callback(Callback):
                                 batch_size=50, 
                                 verbose=1
                             )
-        preds_pre_attack = preds_pre_attack[-1]
         performance_pre_attack = np.count_nonzero(
                                 np.argmax(preds_pre_attack, axis=1) == 
                                 np.argmax(self.testY, axis=1)
@@ -99,7 +96,6 @@ class fgsm_callback(Callback):
                                 batch_size=32, 
                                 verbose=1
                             )
-        preds_post_attack = preds_post_attack[-1]
         performance_post_attack = np.count_nonzero(
                                 np.argmax(preds_post_attack, axis=1) == 
                                 np.argmax(self.testY, axis=1)
