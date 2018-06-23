@@ -4,8 +4,12 @@ Utility codes for data, eval, plotting, etc.
 
 from __future__ import print_function
 import os
+import re
+import hashlib
 import sys
 import librosa
+import scipy
+import shutil
 import h5py
 import numpy as np
 import multiprocessing as mp
@@ -60,7 +64,7 @@ def score_generator(test_samples_folder, batch_size=32):
     s = len(file_names)
     lowers = list(range(0, s, batch_size))
     print("Total test files found...", s)
-    
+
     for ix in lowers:
         if (ix+batch_size)>s:
             ux = s
@@ -113,10 +117,6 @@ def make_training_list(data_root, exclude_dirs = ["_background_noise_"]):
     print("\nWriting %s ..."%train_path)
     with open(train_path, 'w') as fp:
         fp.writelines("\n".join(train_files))
-
-    print("\nWriting %s : test + validation ..."%rest_path)
-    with open(rest_path, 'w') as fp:
-        fp.writelines(rest_files)
 
     class_ix = {c:ix for ix,c in enumerate(sorted(classes))}
     class_path = os.path.join(data_root, "DICT_ix_class.cpkl")
@@ -178,13 +178,124 @@ def create_data_hdf5(root):
     print("\nDone.")
 
 
+MAX_NUM_WAVS_PER_CLASS = 2**27 - 1  # ~134M
+def which_set(filename, validation_percentage, testing_percentage):
+    """Determines which data partition the file should belong to.
+
+    We want to keep files in the same training, validation, or testing sets even
+    if new ones are added over time. This makes it less likely that testing
+    samples will accidentally be reused in training when long runs are restarted
+    for example. To keep this stability, a hash of the filename is taken and used
+    to determine which set it should belong to. This determination only depends on
+    the name and the set proportions, so it won't change as other files are added.
+
+    It's also useful to associate particular files as related (for example words
+    spoken by the same person), so anything after '_nohash_' in a filename is
+    ignored for set determination. This ensures that 'bobby_nohash_0.wav' and
+    'bobby_nohash_1.wav' are always in the same set, for example.
+
+    Args:
+      filename: File path of the data sample.
+      validation_percentage: How much of the data set to use for validation.
+      testing_percentage: How much of the data set to use for testing.
+
+    Returns:
+      String, one of 'training', 'validation', or 'testing'.
+    """
+    base_name = os.path.basename(filename)
+    # We want to ignore anything after '_nohash_' in the file name when
+    # deciding which set to put a wav in, so the data set creator has a way of
+    # grouping wavs that are close variations of each other.
+    hash_name = re.sub(r'_nohash_.*$', '', base_name)
+    # This looks a bit magical, but we need to decide whether this file should
+    # go into the training, testing, or validation sets, and we want to keep
+    # existing files in the same set even if more files are subsequently
+    # added.
+    # To do that, we need a stable way of deciding based on just the file name
+    # itself, so we do a hash of that and then use that to generate a
+    # probability value that we use to assign it.
+    hash_name_hashed = hashlib.sha1(hash_name.encode('utf-8')).hexdigest()
+    percentage_hash = ((int(hash_name_hashed, 16) %
+                        (MAX_NUM_WAVS_PER_CLASS + 1)) *
+                       (100.0 / MAX_NUM_WAVS_PER_CLASS))
+    if percentage_hash < validation_percentage:
+      result = 'validation'
+    elif percentage_hash < (testing_percentage + validation_percentage):
+      result = 'testing'
+    else:
+      result = 'training'
+    return result
+
+
+def add_silence(data_root):
+    silence_dir = os.path.join(data_root, "silence")
+    bnoise_dir = os.path.join(data_root, "_background_noise_")
+    cat_file = os.path.join(bnoise_dir, "dude_miaowing.wav")
+
+    assert os.path.isdir(silence_dir) is False, "ERROR. silence dir already exists."
+    assert os.path.isdir(bnoise_dir), "ERROR. _background_noise_ dir does not exist."
+    assert os.path.isfile(cat_file), "ERROR. dude_miaowing.wav does not exist."
+
+    os.makedirs(silence_dir)
+
+    ## clean the cat file.
+    fs1, y1 = scipy.io.wavfile.read(cat_file)
+    drop_points = [(0, 4), (20, 23), (39, 46), (50, 52)]
+    use_points = [(4, 20), (23, 39), (46, 50), (52, 62)]
+
+    new_audio = []
+    for start, stop in use_points:
+        new_audio.append(y1[start*fs1:stop*fs1])
+    new_audio = np.hstack(new_audio)
+
+    print("Saving new cat audio...")
+    shutil.move(cat_file, os.path.join(bnoise_dir, "new_dude_miaowing.wav.orig"))
+    scipy.io.wavfile.write(cat_file, fs1, new_audio)
+    print("Done.")
+
+    for fname in os.listdir(bnoise_dir):
+        if fname.endswith(".wav"):
+            path = os.path.join(bnoise_dir, fname)
+            audio, _ = librosa.load(path, sr=SRATE)
+            alen = len(audio)
+            print(fname, alen, alen//SRATE)
+
+            for count, ix in enumerate(range(0, len(audio), SRATE)):
+                up = ix + SRATE
+                if up > alen:
+                    up = alen
+
+                temp_audio = audio[ix:up]
+                temp_path = os.path.join(silence_dir, fname[:2]+"%d_nohash_%d.wav"%(count, count))
+
+                if len(temp_audio) >= 10000:
+                    if len(temp_audio) < SRATE:
+                        temp_audio = np.pad(temp_audio, (SRATE - len(temp_audio), 0), mode='constant')
+                    else:
+                        temp_audio = temp_audio[:SRATE]
+
+                    librosa.output.write_wav(temp_path, temp_audio, SRATE)
+
+            assert up==alen, "YO! Your indexing limits are not matching!!!"
+
+
 if __name__ == '__main__':
     data_root = sys.argv[1]
+    what = sys.argv[2]
     print("\nRoot provided:", data_root)
+    print("Mode:", what)
+
     import time
     _st = time.time()
 
-    make_training_list(data_root)
-    create_data_hdf5(data_root)
+    if what == "data":
+        make_training_list(data_root)
+        create_data_hdf5(data_root)
+        print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
 
-    print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
+    elif what == "silence":
+        add_silence(data_root)
+        print("\n\nTime taken:", (time.time() - _st)/60, "mins.")
+
+    else:
+        print("Valid options are 'data' or 'silence'")

@@ -22,30 +22,33 @@ except:
 # network arch
 input_tensor = Input(shape=(16000,))
 output_tensor = resemul(
-                        input_tensor, block_type="basic", init_features=128,
+                        input_tensor, block_type="rese", init_features=128,
                         amplifying_ratio=16, drop_rate=0.5, weight_decay=0.0,
-                        num_classes=30
+                        num_classes=31
                     )
 model = Model(input_tensor, output_tensor)
 print(model.summary())
 sgd = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True)
 model.compile(sgd, "categorical_crossentropy", metrics=["accuracy"])
 print("Model compiled.")
-model.load_weights("/home/tejaswin.p/Can-You-Hear-Me/checkpoints/weights.16-0.23.hdf5")
-print("Weights loaded.")
 
+
+# scoring
 if sys.argv[1] == "score":
+    model.load_weights("/home/tejaswin.p/Can-You-Hear-Me/checkpoints/2018-06-22_08:40:45.299850/weights.04-0.25.hdf5")
+    print("Weights loaded.")
+
     score_dgen = score_generator(sys.argv[2], batch_size=250)
     with open("/home/tejaswin.p/.kaggle/competitions/tensorflow-speech-recognition-challenge/train/audio/DICT_ix_class.cpkl", "rb") as fp:
         ix_label = {ix:label for label, ix in pickle.load(fp).items()}
 
 
-    allowed = "yes, no, up, down, left, right, on, off, stop, go".strip().split(",")
+    allowed = "yes, no, up, down, left, right, on, off, stop, go, silence".strip().split(",")
     allowed = [token.strip() for token in allowed]
 
     for ix,label in ix_label.items():
         if label not in allowed:
-            ix_label[ix] = "silence"
+            ix_label[ix] = "unknown"
 
     score_csv = ["fname,label\n"]
 
@@ -77,7 +80,7 @@ checkpoint = callbacks.ModelCheckpoint(
                 )
 lrschedule = callbacks.ReduceLROnPlateau(
                     monitor="val_loss",
-                    factor=0.2,
+                    factor=0.5,
                     patience=3,
                     verbose=1,
                     min_lr=1e-07
@@ -88,8 +91,8 @@ tboard     = callbacks.TensorBoard(log_dir="./logs/%s"%_expdt)
 batch_size = 32
 train_dgen = data_generator(sys.argv[1], batch_size)
 valid_dgen  = data_generator(sys.argv[2], batch_size)
-train_steps_per_epoch = 51087 // batch_size + 1
-valid_steps_per_epoch = 13633 // batch_size + 1
+train_steps_per_epoch = 51384 // batch_size + 1
+valid_steps_per_epoch = 13718 // batch_size + 1
 print("Train steps per epoch: ", train_steps_per_epoch)
 print("valid steps per epoch: ", valid_steps_per_epoch)
 
