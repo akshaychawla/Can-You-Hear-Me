@@ -8,6 +8,7 @@ import re
 import hashlib
 import sys
 import librosa
+import librosa.display
 import h5py
 import numpy as np
 import multiprocessing as mp
@@ -18,6 +19,9 @@ except:
 from keras.utils import to_categorical
 from joblib import Parallel, delayed
 from functools import partial
+from scipy.fftpack import fft
+import matplotlib.pyplot as plt
+
 
 SRATE = 16000
 def librosa_load(path, srate):
@@ -27,6 +31,40 @@ def librosa_load(path, srate):
     else:
         return audio[:srate]
 load_audio_16k = partial(librosa_load, srate=SRATE)
+
+
+def plot_fft(y, fs=SRATE):
+    """
+    Plot the frequency domain visualisation.
+    Inputs: audio array, sampling rate
+    """
+    T = 1.0 / fs
+    N = y.shape[0]
+    yf = fft(y)
+    xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
+    vals = 2.0/N * np.abs(yf[0:N//2])
+    # FFT is simmetrical, so we take just the first half
+    # FFT is also complex, to we take just the real part (abs)
+    plt.figure(figsize=(14, 5))
+    plt.title('FFT of recording sampled with ' + str(SRATE) + ' Hz')
+    plt.plot(xf, vals)
+    plt.xlabel('Frequency')
+    plt.grid()
+    plt.show()
+    return
+
+
+def plot_spectogram(y, sr=SRATE):
+    """
+    Plots spectogram of input signal.
+    Inputs: audio array, sampling rate
+    """
+    X = librosa.stft(y)
+    Xdb = librosa.amplitude_to_db(abs(X))
+    plt.figure(figsize=(14, 5))
+    librosa.display.specshow(Xdb, sr=sr, x_axis='time', y_axis='hz')
+    plt.show()
+    return
 
 
 def data_generator(h5path, batch_size=32):
