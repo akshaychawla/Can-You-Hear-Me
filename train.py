@@ -14,6 +14,7 @@ from utils import data_generator
 from kaggle_utils import score_generator
 import sys
 import os
+from fgsm_callback import fgsm_callback
 try:
     import cPickle as pickle
 except:
@@ -86,6 +87,7 @@ lrschedule = callbacks.ReduceLROnPlateau(
                     min_lr=1e-07
                 )
 tboard     = callbacks.TensorBoard(log_dir="./logs/%s"%_expdt)
+fgsm_cb    = fgsm_callback(sys.argv[2], eta=0.01)
 
 # Train the model
 batch_size = 32
@@ -102,7 +104,7 @@ history = model.fit_generator(
                     epochs=50,
                     validation_data=valid_dgen,
                     validation_steps=valid_steps_per_epoch,
-                    callbacks=[checkpoint, lrschedule, tboard]
+                    callbacks=[checkpoint, lrschedule, tboard, fgsm_cb]
                 )
 
 import ipdb; ipdb.set_trace()
