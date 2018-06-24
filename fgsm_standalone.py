@@ -47,8 +47,8 @@ def get_model(weights):
                             num_classes=31
                         )
     model = Model(input_tensor, output_tensor)
-    # sgd = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True)
-    # model.compile(sgd, "categorical_crossentropy", metrics=["accuracy"])
+    sgd = optimizers.SGD(lr=0.01, momentum=0.9, nesterov=True)
+    model.compile(sgd, "categorical_crossentropy", metrics=["accuracy"])
     print("Model compiled.")
     model.load_weights(weights)
     print("weights loaded..")
@@ -56,7 +56,6 @@ def get_model(weights):
     return model 
 
 def attack(wavefile, checkpoint, eta, dict_index):
-
     # infer gt 
     gt_string = os.path.dirname(wavefile).split("/")[-1]
     assert gt_string in dict_index.keys(), "Could not find {} in dict".format(gt_string)
