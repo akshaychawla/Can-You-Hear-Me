@@ -1,5 +1,5 @@
 """
-Stand-Alone utility for FGSM 
+Stand-Alone utility for FGSM
 Input: checkpoint for 'rese' model, wavefile, eta, output_folder
 Output: (DICT -> orig_numpy, grads_numpy, perturbed_sample_numpy) + wavefile perturbed sample
 
@@ -11,7 +11,7 @@ from keras.callbacks import Callback, ModelCheckpoint, LearningRateScheduler, Te
 from keras.layers import Input
 from keras.utils import to_categorical
 from keras.preprocessing.image import ImageDataGenerator
-from keras import optimizers 
+from keras import optimizers
 import keras.backend as K
 from keras.models import Model, Sequential
 from keras import losses
@@ -53,36 +53,37 @@ def get_model(weights):
     model.load_weights(weights)
     print("weights loaded..")
 
-    return model 
+    return model
 
 def attack(wavefile, checkpoint, eta, dict_index):
-    # infer gt 
+    # infer gt
     gt_string = os.path.dirname(wavefile).split("/")[-1]
     assert gt_string in dict_index.keys(), "Could not find {} in dict".format(gt_string)
-    gt_index = dict_index[gt_string] 
+    gt_index = dict_index[gt_string]
     # print("GT String: {} | GT index: {}".format(gt_string, gt_index))
     gt_index = to_categorical(gt_index, num_classes=31)
     gt_index = gt_index.reshape(1,-1)
 
     # Load audio file + Model with checkpoint
-    x = load_audio_16k(wavefile) 
+    x = load_audio_16k(wavefile)
     x = x.reshape(1,-1)
-    model = get_model(checkpoint) 
+    model = get_model(checkpoint)
 
-    # predict before attack 
-    preds_pre = model.predict(x, batch_size=1) 
+    # predict before attack
+    preds_pre = model.predict(x, batch_size=1)
+    import ipdb; ipdb.set_trace()
 
-    # Calculate gradient 
+    # Calculate gradient
     calc_grads = create_gradient_function(model, 0, -1)
     _, grads_x = calc_grads([x, gt_index])
 
     # Perturb + predict
     attacked_x = x + eta*np.sign(grads_x)
-    preds_post = model.predict(attacked_x, batch_size=1) 
+    preds_post = model.predict(attacked_x, batch_size=1)
 
     argmax_pre, argmax_post = np.argmax(preds_pre), np.argmax(preds_post)
-    
-    return x, attacked_x, grads_x, argmax_pre, argmax_post 
+
+    return x, attacked_x, grads_x, argmax_pre, argmax_post
 
 
 
@@ -90,31 +91,31 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint",type=str,help="weights/checkpoint h5")
     parser.add_argument("--wavefile",type=str, help="wavefile to attack")
-    parser.add_argument("--eta", type=float, help="eta for attack") 
+    parser.add_argument("--eta", type=float, help="eta for attack")
     parser.add_argument("--output_folder", type=str, help="directory to store output")
     parser.add_argument("--dict_location", type=str, help="location of DICT_ix_pickle file")
-    args = parser.parse_args() 
+    args = parser.parse_args()
 
-    # checks 
+    # checks
     assert os.path.isfile(args.checkpoint), "{} is not a valid file".format(args.checkpoint)
-    assert os.path.isfile(args.wavefile), "{} is not a valid file".format(args.wavefile) 
+    assert os.path.isfile(args.wavefile), "{} is not a valid file".format(args.wavefile)
     assert os.path.isdir(args.output_folder), "{} is not a valid folder".format(args.output_folder)
     assert os.path.isfile(args.dict_location), "{} is not a valid dictionary".format(args.dict_location)
     assert isinstance(args.eta, float), "eta is not a valid float"
 
-    # Load index dictionary 
-    with open(args.dict_location, "rb") as f: 
-        dict_index = pickle.load(f) 
+    # Load index dictionary
+    with open(args.dict_location, "rb") as f:
+        dict_index = pickle.load(f)
     orig_np, attacked_np, grads_np, pre_idx, post_idx = attack(
-                                                                args.wavefile, 
+                                                                args.wavefile,
                                                                 args.checkpoint,
-                                                                args.eta, 
+                                                                args.eta,
                                                                 dict_index
                                                         )
     dict_index_reverse = {value:key for key,value in dict_index.items()}
     print("Before attack: ",dict_index_reverse[pre_idx])
     print("After attack: ",dict_index_reverse[post_idx])
-    print("saving files in folder: ", args.output_folder) 
+    print("saving files in folder: ", args.output_folder)
     np.save(os.path.join(args.output_folder,"origs.npy"), orig_np)
     np.save(os.path.join(args.output_folder,"attacked.npy"), attacked_np)
     np.save(os.path.join(args.output_folder,"grads.npy"), grads_np)
@@ -133,11 +134,11 @@ if __name__ == "__main__":
         # # Performance before attack
         # preds_pre_attack = self.model.predict(
                                 # x = self.testX_normed,
-                                # batch_size=50, 
+                                # batch_size=50,
                                 # verbose=1
                             # )
         # performance_pre_attack = np.count_nonzero(
-                                # np.argmax(preds_pre_attack, axis=1) == 
+                                # np.argmax(preds_pre_attack, axis=1) ==
                                 # np.argmax(self.testY, axis=1)
                             # )
         # print("[FGSM]Accuracy before attack is: ", performance_pre_attack/len(preds_pre_attack))
@@ -163,17 +164,14 @@ if __name__ == "__main__":
         # # Performance after attack
         # preds_post_attack = self.model.predict(
                                 # x = attacked_testX,
-                                # batch_size=32, 
+                                # batch_size=32,
                                 # verbose=1
                             # )
         # performance_post_attack = np.count_nonzero(
-                                # np.argmax(preds_post_attack, axis=1) == 
+                                # np.argmax(preds_post_attack, axis=1) ==
                                 # np.argmax(self.testY, axis=1)
                             # )
         # print("[FGSM]Accuracy after attack is: ", performance_post_attack/len(preds_pre_attack))
 
-        # # Clean up 
+        # # Clean up
         # del calc_grads
-
-
-
