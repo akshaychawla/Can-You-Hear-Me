@@ -4,4 +4,4 @@
 logs/*
 checkpoints/*
 trash/*
-
+.DS_Store
