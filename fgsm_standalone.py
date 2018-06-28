@@ -55,7 +55,7 @@ def get_model(weights):
 
     return model
 
-def attack(wavefile, checkpoint, eta, dict_index):
+def attack(wavefile, checkpoint, eta, dict_index, strategy="fgsm"):
     # infer gt
     gt_string = os.path.dirname(wavefile).split("/")[-1]
     assert gt_string in dict_index.keys(), "Could not find {} in dict".format(gt_string)
@@ -71,17 +71,24 @@ def attack(wavefile, checkpoint, eta, dict_index):
 
     # predict before attack
     preds_pre = model.predict(x, batch_size=1)
-    import ipdb; ipdb.set_trace()
 
     # Calculate gradient
     calc_grads = create_gradient_function(model, 0, -1)
     _, grads_x = calc_grads([x, gt_index])
 
     # Perturb + predict
-    attacked_x = x + eta*np.sign(grads_x)
+    if strategy == "fgsm":
+        attacked_x = x + eta*np.sign(grads_x)
+    elif strategy == "fgv":
+        attacked_x = x + eta*grads_x
+    else:
+        print("INVALID strategy ARGUMENT:%s."%strategy)
+
     preds_post = model.predict(attacked_x, batch_size=1)
 
     argmax_pre, argmax_post = np.argmax(preds_pre), np.argmax(preds_post)
+    print("PREE:", argmax_pre, np.max(preds_pre))
+    print("POST:", argmax_post, np.max(preds_post))
 
     return x, attacked_x, grads_x, argmax_pre, argmax_post
 
@@ -94,6 +101,7 @@ if __name__ == "__main__":
     parser.add_argument("--eta", type=float, help="eta for attack")
     parser.add_argument("--output_folder", type=str, help="directory to store output")
     parser.add_argument("--dict_location", type=str, help="location of DICT_ix_pickle file")
+    parser.add_argument("--strategy", type=str, help="strategy for adversarial attack")
     args = parser.parse_args()
 
     # checks
@@ -102,6 +110,7 @@ if __name__ == "__main__":
     assert os.path.isdir(args.output_folder), "{} is not a valid folder".format(args.output_folder)
     assert os.path.isfile(args.dict_location), "{} is not a valid dictionary".format(args.dict_location)
     assert isinstance(args.eta, float), "eta is not a valid float"
+    assert args.strategy in ("fgsm", "fgv"), "{} strategy invalid".format(args.strategy)
 
     # Load index dictionary
     with open(args.dict_location, "rb") as f:
@@ -110,7 +119,8 @@ if __name__ == "__main__":
                                                                 args.wavefile,
                                                                 args.checkpoint,
                                                                 args.eta,
-                                                                dict_index
+                                                                dict_index,
+                                                                args.strategy
                                                         )
     dict_index_reverse = {value:key for key,value in dict_index.items()}
     print("Before attack: ",dict_index_reverse[pre_idx])
