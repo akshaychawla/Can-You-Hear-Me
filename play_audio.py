@@ -1,6 +1,7 @@
 import pyaudio
 import wave
 import sys
+from multiprocessing import Process
 
 def playback(input_file):
     """
@@ -48,6 +49,7 @@ def record(RECORD_SECONDS):
 
     p_record = pyaudio.PyAudio() 
 
+    TIME_start = time.time()
     stream_record = p_record.open(format=FORMAT,
                         channels=CHANNELS,
                         rate=RATE,
@@ -67,21 +69,39 @@ def record(RECORD_SECONDS):
     stream_record.stop_stream()
     stream_record.close()
     p_record.terminate()
+    TIME_stop = time.time()
 
-    return frames, b''.join(frames)
+    return b''.join(frames), TIME_start, TIME_stop
 
-def test(): 
+def play_record_multi(input_file, output_file):
 
-    # test record 
-    frames, samples = record(RECORD_SECONDS=5)
+    PROCESS_record = Process(target=record, args=(3,))
+    PROCESS_record.start() 
 
-    wf = wave.open("recorded.wav", 'wb')
+    # playback 
+    PLAYBACK_start, PLAYBACK_stop = playback(input_file)
+
+    # wait for recording to finish 
+    joined_frames, RECORD_start, RECORD_stop = PROCESS_record.join()
+
+    # Clip joined_frames from PLAYBACK_start to PLAYBACK_stop
+    # TODO 
+
+    # save the final 
+    wf = wave.open(output_file, 'wb')
     wf.setnchannels(1)
     wf.setsampwidth(2)
     wf.setframerate(16000)
     wf.writeframes(samples)
     wf.close()
-
+    
 
 if __name__ == "__main__":
-    test() 
+
+    print(
+    """Edit this file to call play_record_multi with 
+    argument 1: wav file to be played 
+    argument 2: recorded wav to be saved to disk 
+    e.g play_record_multi("yes.wav", "recorded_yes.wav")
+    """
+    )
