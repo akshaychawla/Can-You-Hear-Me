@@ -86,6 +86,7 @@ def play_record_multi(input_file, output_file):
     PLAYBACK_start, PLAYBACK_stop = playback(input_file)
 
     # wait for recording to finish
+    import ipdb; ipdb.set_trace()
     joined_frames, RECORD_start, RECORD_stop = PROCESS_record.join()
 
     # Clip joined_frames from PLAYBACK_start to PLAYBACK_stop
