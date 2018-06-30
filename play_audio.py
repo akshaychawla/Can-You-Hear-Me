@@ -13,10 +13,12 @@ def playback(input_file):
     CHUNK = 1000
 
     # wavefile read obj + PyAudio obj
-    wf = wave.open(input_file, "rb")
-    p_playback = pyaudio.PyAudio()
+    import ipdb; ipdb.set_trace()
+    wf = wave.Wave_read(input_file)
+    p = pyaudio.PyAudio()
 
     # playback file obj ; note output=True
+    print("getsampwidth", wf.getsampwidth())
     stream_playback = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                 channels=wf.getnchannels(),
                 rate=wf.getframerate(),
@@ -33,6 +35,7 @@ def playback(input_file):
     stream_playback.stop_stream()
     stream_playback.close()
     p.terminate()
+    wf.close()
 
     return TIME_start, TIME_stop
 
@@ -106,4 +109,4 @@ if __name__ == "__main__":
     e.g play_record_multi("yes.wav", "recorded_yes.wav")
     """
     )
-    play_record_multi("trash/attacked_clip_d0846dc99.wav", "trash/HELLO_recorded.wav")
+    play_record_multi("/Users/tejaswin.p/Downloads/clip_d0846dc99.wav", "trash/HELLO_recorded.wav")
